@@ -1,8 +1,10 @@
 // Nextflow script for too long error
-
-// なぜか、too longにならない。だめだこりゃ
+// https://github.com/nextflow-io/nextflow/issues/4689 これが起きた時の暫定対応
+// なぜか、too longのエラーは再現できない。 （N E X T F L O W   ~  version 24.04.2で実行した場合）
+// エラーに遭遇したのはv23.10なので、バージョン更新して現地環境でためす。直っているのかもしれない（？）
 nextflow.enable.dsl=2
-params.outdir="/home/ykitano/avoid_too_long_err/nf-tips"
+params.outdir="" // path to outdir
+params.pathlist="final.list.txt" //filename
 
 process touch_files {
     cpus = 1
@@ -17,26 +19,28 @@ process touch_files {
     script:
     out_file="${i}.metcyamecya_ninagaifilenamegatsuiteirutosuru.mottonagaihougayoi.txt"
     """
-    find . > ${out_file}    
+    date > ${out_file}    
     """
 }
 
 process too_long_error{
-    // 1000個のファイルを引数として渡す 
-    //  遭遇したエラーは環境依存・バージョン依存かも？これでは再現できていない。。
+    // 1000個～のファイルを引数として渡す 
+    //  遭遇したエラーは環境依存・バージョン依存かも？再現できていない
     cpus = 1
     errorStrategy 'retry'
     maxRetries 2
     maxErrors 5
-    publishDir "too_long_error", mode:'copy'
+    publishDir "${params.outdir}", mode:'copy'
     input:
     path(file_list)
     val(name)
     output:
-    path("too_long_error.txt")
+    path("kaisekikekka.txt")
     script:
     """
-    bash /home/ykitano/avoid_too_long_err/nf-tips/sample.sh ${file_list.collect {" --v $it "}.join()} > too_long_error.txt
+    for line in ` cat ${file_list}`
+    do cat \$line
+    done  > kaisekikekka.txt
     """
 }
 
@@ -46,23 +50,22 @@ process write_file{
     maxRetries 2
     maxErrors 5
     maxForks 1
-    publishDir "too_long_error", mode:'copy'
+    publishDir "${params.outdir}", mode:'copy'
     input:
     path(filename)
-    path("${params.outdir}/too_long_error/file_list.txt")
+    path("${params.outdir}/${params.pathlist}")
     output:
-    path("file_list.txt") , emit: pathlist
     val("${filename}"), emit: name
     script:
     """
     echo ${filename}
-    ls `pwd`/${filename} >> file_list.txt
+    ls `pwd`/${filename} >> "${params.outdir}/${params.pathlist}"
     """
 }
 
 workflow {
     range = Channel.from(1..1000)
     file=touch_files(range)
-    write = write_file(file.touch_file,"${params.outdir}/too_long_error/file_list.txt")
-    too_long_error("${params.outdir}/too_long_error/file_list.txt",write.name.collect())
+    write = write_file(file.touch_file,"${params.outdir}/${params.pathlist}")
+    too_long_error("${params.outdir}/${params.pathlist}",write.name.collect())
 }
