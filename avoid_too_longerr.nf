@@ -69,3 +69,4 @@ workflow {
     write = write_file(file.touch_file,"${params.outdir}/${params.pathlist}")
     too_long_error("${params.outdir}/${params.pathlist}",write.name.collect())
 }
+
