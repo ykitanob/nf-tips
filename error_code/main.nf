@@ -1,6 +1,8 @@
 // ツールがエラーを返した場合でもどうにかしてnfはfailにならないようにする
-params.tool= /path/to/"sample.sh"
+// Even if the tool returns an error, find a way to prevent nf from failing
 
+// 2つのプロセスがエラーになるはず。
+// Two processes should fail.
 process return_error {
     cpus = 1
     errorStrategy 'ignore'
@@ -10,17 +12,36 @@ process return_error {
     input:
     val i
     output:
-    path("return_error${i}.txt")
+    path("avoid_tool_error${i}.txt")
 
     script:
     """
-    bash ${params.tool} job${i} > return_error${i}.txt
+    function run_tool {
+    if [ job${i} == "job1" ]
+    then
+        echo "job failed" > avoid_tool_error${i}.txt 
+        return 128
+    elif [ job${i} == "job4" ]
+    then
+        echo "job failed"
+        echo "exit code 3 to 124 are tool error" > avoid_tool_error${i}.txt 
+        return 4
+    else
+        echo "Job success" > avoid_tool_error${i}.txt 
+    fi 
+    }
+    
+    run_tool 
+
     
     """
 }
+
+// すべてのプロセスがexit0となり、failになるプロセスが無いはず。
+//All processes should exit with code 0, and there should be no failing processes.
 process avoid_tool_error{
     cpus = 1
-    errorStrategy 'retry'
+    errorStrategy 'ignore'//'retry'
     maxRetries 2
     maxErrors 5
     publishDir "avoid_tool_error", mode:'copy'
@@ -31,15 +52,31 @@ process avoid_tool_error{
 
     script:
     """
-    # エラーが返ってきた場合でもexit 0で終了するようにはできる
-    bash ${params.tool} job${i} > avoid_tool_error${i}.txt || exit 0\
+    function run_tool {
+    if [ job${i} == "job1" ]
+    then
+        echo "job failed" > avoid_tool_error${i}.txt 
+        return 128
+    elif [ job${i} == "job4" ]
+    then
+        echo "job failed"
+        echo "exit code 3 to 124 are tool error" > avoid_tool_error${i}.txt 
+        return 4
+    else
+        echo "Job success" > avoid_tool_error${i}.txt 
+    fi 
+    }
+    
+    run_tool || exit 0
 
     """
 }
 
+// exit codeが125より大きい（プログラムのエラー以外）はfailになるはず。failになるのは１つ
+// All processes should exit with code 0, and there should be no failing processes.
 process avoid2_tool_error{
     cpus = 1
-    errorStrategy 'retry'
+    errorStrategy "ignore"//'retry'
     maxRetries 5
     maxErrors 5
     publishDir "avoid2_tool_error", mode:'copy'
@@ -51,7 +88,24 @@ process avoid2_tool_error{
     script:
     """
     trap 'if [[ \$? -ge 3 && \$? -le 124 ]]; then exit 0; else exit \$?; fi' ERR
-    bash ${params.tool} job${i} > avoid_tool_error${i}.txt 
+
+    function run_tool {
+    if [ job${i} == "job1" ]
+    then
+        echo "job failed" > avoid_tool_error${i}.txt 
+        return 128
+    elif [ job${i} == "job4" ]
+    then
+        echo "job failed"
+        echo "exit code 3 to 124 are tool error" > avoid_tool_error${i}.txt 
+        return 4
+    else
+        echo "Job success" > avoid_tool_error${i}.txt 
+    fi 
+    }
+    
+    run_tool 
+
 
     """
 }

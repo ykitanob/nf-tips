@@ -4,13 +4,13 @@
 
 (1) 解析ツールがエラーを返す場合と解析サーバーがエラーを返す場合の区別がつかない。
     → スクリプトにエラーハンドリングを記述する
-   - error_code_cannot_handle.nf
+   - error_code/main.nf
 
 ！未解決(2) Groovyには「string too long」という既知のエラーがあります。https://github.com/nextflow-io/nextflow/issues/4689
 
 - too_longerr.nf
    エラーを再現するためのワークフロー（注：WSL2/UbuntuにインストールされたNextflow 24-04では再現しませんでした）
-- avoid_too_longerr.nf
+- too_long/main.nf
    エラーを回避するために作成されたワークフロー
 
 
