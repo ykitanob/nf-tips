@@ -1,6 +1,6 @@
 // Nextflow script for too long error
 nextflow.enable.dsl=2
-params.outdir="" // path to outdir
+params.outdir=System.getProperty("user.dir") // path to current directory
 params.pathlist="final.list.txt" //filename
 
 process touch_files {

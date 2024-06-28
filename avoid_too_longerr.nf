@@ -2,8 +2,10 @@
 // https://github.com/nextflow-io/nextflow/issues/4689 これが起きた時の暫定対応
 // なぜか、too longのエラーは再現できない。 （N E X T F L O W   ~  version 24.04.2で実行した場合）
 // エラーに遭遇したのはv23.10なので、バージョン更新して現地環境でためす。直っているのかもしれない（？）
+
+
 nextflow.enable.dsl=2
-params.outdir="" // path to outdir
+params.outdir=System.getProperty("user.dir") // path to current directory
 params.pathlist="final.list.txt" //filename
 
 process touch_files {
