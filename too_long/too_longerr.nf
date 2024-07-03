@@ -17,7 +17,7 @@ process touch_files {
     path("${out_file}"), emit: touch_file
     path("${out_file}"), emit: touch_file_index 
    script:
-    out_file="${i}.metcyamecya_ninagaifilenamegatsuiteirutosuru.mottonagaihougayoi.txt"
+    out_file="${i}.outputfile.txt"
     """
     date > ${out_file}   
     date >${out_file}.index 

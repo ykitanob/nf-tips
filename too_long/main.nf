@@ -1,8 +1,6 @@
 // Nextflow script for too long error
 // https://github.com/nextflow-io/nextflow/issues/4689 これが起きた時の暫定対応
-// なぜか、too longのエラーは再現できない。 （N E X T F L O W   ~  version 24.04.2で実行した場合）
-// エラーに遭遇したのはv23.10なので、バージョン更新して現地環境でためす。直っているのかもしれない（？）
-
+//　このワークフローではエラーを再現することができる。
 
 nextflow.enable.dsl=2
 params.outdir=System.getProperty("user.dir") // path to current directory
@@ -14,14 +12,18 @@ process touch_files {
     maxRetries 2
     maxErrors 5
     publishDir "touch_files", mode:'copy'
+  //  executor 'slurm'
+  //  queue 'default-partition'
     input:
     val i
     output:
     path("${out_file}"), emit: touch_file
-    script:
-    out_file="${i}.metcyamecya_ninagaifilenamegatsuiteirutosuru.mottonagaihougayoi.txt"
+    path("${out_file}.index"), emit: touch_file_index 
+   script:
+    out_file="${i}.outputfile.txt"
     """
-    date > ${out_file}    
+    date > ${out_file}   
+    date >${out_file}.index 
     """
 }
 
@@ -46,6 +48,7 @@ process too_long_error{
     """
 }
 
+
 process write_file{
     cpus ~ 1
     errorStrategy 'retry'
@@ -55,20 +58,22 @@ process write_file{
     publishDir "${params.outdir}", mode:'copy'
     input:
     path(filename)
+    path(filename_index)
     path("${params.outdir}/${params.pathlist}")
     output:
     val("${filename}"), emit: name
     script:
     """
     echo ${filename}
-    ls `pwd`/${filename} >> "${params.outdir}/${params.pathlist}"
+    echo `pwd`/`ls ${filename}` >> "${params.outdir}/${params.pathlist}"
+    echo `pwd`/`ls ${filename}*`   >> "${params.outdir}/${params.pathlist}_check"  #indexが同じディレクトリにあることを確認
     """
 }
 
 workflow {
     range = Channel.from(1..1000)
     file=touch_files(range)
-    write = write_file(file.touch_file,"${params.outdir}/${params.pathlist}")
+    write = write_file(file.touch_file,file.touch_file_index,"${params.outdir}/${params.pathlist}")
     too_long_error("${params.outdir}/${params.pathlist}",write.name.collect())
 }
 
