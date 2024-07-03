@@ -6,6 +6,14 @@
 nextflow.enable.dsl=2
 params.outdir=System.getProperty("user.dir") // path to current directory
 params.pathlist="final.list.txt" //filename
+params.input="uuid_fortest.txt"
+
+
+Channel
+   .from(file(params.input))
+   .splitText()
+   .map { it.trim() }
+   .set {inputid}
 
 process touch_files {
     cpus = 1
@@ -45,7 +53,7 @@ process too_long_error{
     shell:
     """
     for line in ` cat ${file_list}`
-    do echo -n " --v " ; echo -n \$line"\"
+    do echo -n " --v " ; echo -n \$line
     done  > kaisekikekka.txt
     """
 }
@@ -73,8 +81,8 @@ process write_file{
 }
 
 workflow {
-    range = Channel.from(1..1000)
-    file=touch_files(range)
+
+    file=touch_files(inputid)
     write = write_file(file.touch_file,file.touch_file_index,"${params.outdir}/${params.pathlist}")
     too_long_error("${params.outdir}/${params.pathlist}",write.name.collect())
 }
