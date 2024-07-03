@@ -1,6 +1,7 @@
 // Nextflow script for too long error
 // https://github.com/nextflow-io/nextflow/issues/4689 これが起きた時の暫定対応
-//　このワークフローではエラーを再現することができる。
+//　too_longerr.nfワークフローではエラーを再現することができる。
+// このワークフローではエラーを回避するために、ファイルにパスを書き出している。
 
 nextflow.enable.dsl=2
 params.outdir=System.getProperty("user.dir") // path to current directory
@@ -40,10 +41,11 @@ process too_long_error{
     val(name)
     output:
     path("kaisekikekka.txt")
-    script:
+    // shellにした場合エラーになる。scriptにするとエラーにならない。どうしてもshellにしたい場合だけこのtipsが使える。
+    shell:
     """
     for line in ` cat ${file_list}`
-    do cat \$line
+    do echo -n " --v " ; echo -n \$line"\"
     done  > kaisekikekka.txt
     """
 }
