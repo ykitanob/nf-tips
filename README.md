@@ -5,12 +5,13 @@
 (English Follows)
 
 ### (1) 解析ツールがエラーを返す場合と解析サーバーがエラーを返す場合の区別がつかない。
-## !!!公式的な解決策がありました
+## !!!公式な解決策がありました。以下のコンフィグでOKです
 ```
-process foo {
-  errorStrategy { sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry' }
+
+    errorStrategy { task.exitStatus in 137..140 ? 'retry' : 'terminate' }
+    maxRetries 3
+
 ```
-これでOK
 
 例えば、GATK fingerprintMetrics等を実行した時や、VCF Validatorを実行し、検体やファイルに異常がある場合は何度再実行してもエラーが解消されませんが、ノードエラーの場合は再実行によりエラーなく解析完了できるためnextflowで再実行してほしいと思います。
 
